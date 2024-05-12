@@ -1,0 +1,155 @@
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Course Management</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-200 text-center font-sans">
+    <h1 class="text-3xl font-bold py-4">Course Management</h1>
+    <div class="management-grid">
+        <!-- Form for adding a new course (POST request) -->
+        <h2 class="text-xl font-semibold">Add New Course</h2>
+        <form id="addCourseForm" class="flex flex-col items-center mb-6">
+            <label for="courseName" class="mb-1">Course Name:</label>
+            <input type="text" id="courseName" name="courseName" required class="px-3 py-2 mb-2 border rounded">
+            <!-- Add an ID to the submit button for easier identification -->
+            <button type="submit" id="addCourseBtn" class="px-4 py-2 bg-green-500 text-white rounded transition duration-300 hover:bg-green-600">
+                Add Course
+            </button>
+        </form>
+
+        <h2 class="text-xl font-semibold">Update Course</h2>
+        <form id="updateCourseForm" class="flex flex-col items-center mb-6">
+            <label for="updateCourseId" class="mb-1">Course ID:</label>
+            <input type="number" id="updateCourseId" name="updateCourseId" required
+                   class="px-3 py-2 mb-2 border rounded">
+            <label for="updateCourseName" class="mb-1">New Course Name:</label>
+            <input type="text" id="updateCourseName" name="updateCourseName" required
+                   class="px-3 py-2 mb-2 border rounded">
+            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded transition duration-300 hover:bg-green-600">
+                Update Course
+            </button>
+        </form>
+
+        <!-- Form for deleting a course by ID (DELETE request) -->
+        <h2 class="text-xl font-semibold">Delete Course</h2>
+        <form id="deleteCourseForm" class="flex flex-col items-center mb-6">
+            <label for="courseId" class="mb-1">Course ID:</label>
+            <input type="number" id="courseId" name="courseId" required
+                   class="px-3 py-2 mb-2 border rounded">
+            <button type="submit" class="px-4 py-2 bg-green-500 text-white rounded transition duration-300 hover:bg-green-600">
+                Delete Course
+            </button>
+        </form>
+    </div>
+
+    <!-- Container for displaying available courses -->
+    <h2 class="text-xl font-semibold">Available Courses</h2>
+    <div id="courseGrid" class="flex flex-wrap justify-center gap-6"></div>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Function to fetch and display courses
+            function fetchCourses() {
+                fetch('/courses')
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log('Courses data:', data); // Log the data received from the server
+                        if (data && data.data) {
+                            showCourses(data.data);
+                        } else {
+                            console.error('Invalid response format:', data);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching courses:', error);
+                    });
+            }
+        
+            // Function to display courses in the grid
+            function showCourses(courses) {
+                console.log('Courses data:', courses); // Add this line to inspect the structure of the courses data
+                const courseGrid = document.getElementById('courseGrid');
+                courseGrid.innerHTML = ''; // Clear previous content
+                courses.forEach(course => {
+                    console.log('Course:', course); // Add this line to inspect each course object
+                    const courseItem = document.createElement('div');
+                    courseItem.classList.add('course-item', 'border', 'border-gray-300', 'rounded', 'p-4', 'm-4', 'w-64', 'bg-white', 'shadow-md', 'transition-transform', 'duration-300', 'ease-in-out', 'hover:-translate-y-2');
+                    courseItem.innerHTML = `<strong class="text-gray-700">${course.course_name}</strong><br>ID: ${course.course_id}`; // Check property names here
+                    courseGrid.appendChild(courseItem);
+                });
+            }
+            
+        
+            // Initial fetch of courses
+            fetchCourses();
+        
+            // Add Course form submission (POST request)
+            document.getElementById('addCourseForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const courseName = document.getElementById('courseName').value;
+                fetch('/course', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 'courseName': courseName })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    fetchCourses(); // Refresh course list after adding
+                    document.getElementById('courseName').value = ''; // Clear input field
+                })
+                .catch(error => {
+                    console.error('Error adding course:', error);
+                });
+            });
+        
+            // Update Course form submission (PUT request)
+            document.getElementById('updateCourseForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const courseId = document.getElementById('updateCourseId').value;
+                const newCourseName = document.getElementById('updateCourseName').value;
+                fetch(`/course/${courseId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 'course': newCourseName })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    fetchCourses(); // Refresh course list after updating
+                    document.getElementById('updateCourseId').value = ''; // Clear input field
+                    document.getElementById('updateCourseName').value = ''; // Clear input field
+                })
+                .catch(error => {
+                    console.error('Error updating course:', error);
+                });
+            });
+
+
+
+            // Delete Course form submission (DELETE request)
+            document.getElementById('deleteCourseForm').addEventListener('submit', function(event) {
+                event.preventDefault();
+                const courseId = document.getElementById('courseId').value;
+                fetch(`/course/${courseId}`, {
+                    method: 'DELETE'
+                })
+                .then(response => response.json())
+                .then(data => {
+                    fetchCourses(); // Refresh course list after deletion
+                    document.getElementById('courseId').value = ''; // Clear input field
+                })
+                .catch(error => {
+                    console.error('Error deleting course:', error);
+                });
+            });
+        });
+        
+    </script>    
+    
+</body>
+</html>
